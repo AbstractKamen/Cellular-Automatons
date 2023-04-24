@@ -11,12 +11,19 @@
 
 <body>
     <h1>Cellular Automatons by Kamen Studentov</h1>
+    <a href="https://en.wikipedia.org/wiki/Cellular_automaton">What is a celluar automaton?</a>
     <p>
     <div id="automatons-dropdown" class="dropdown">
         <button id="automatons-dropbtn" class="dropbtn">Select Automatons</button>
         <div id="automatons-dropdown-content" class="dropdown-content"></div>
     </div><button id="play">Play</button><button id="clear">Clear board</button>
     <span id="current">Current Automaton:</span>
+    </p>
+    <p>
+    <div id="wrapping-dropdown" class="dropdown">
+        <button id="wrapping-dropbtn" class="dropbtn">Select Wrapping</button><span id="current-wrapping"></span>
+        <div id="wrapping-dropdown-content" class="dropdown-content"></div>
+    </div>
     </p>
     <canvas id="game"></canvas>
     <script src="conways_game.js"></script>

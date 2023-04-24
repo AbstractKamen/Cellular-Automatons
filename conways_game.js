@@ -10,11 +10,13 @@ onload = () => {
     ctx.fillStyle = "#202020";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
     const currentAutomatonDisplay = document.getElementById("current");
+    const currentWrappingDisplay = document.getElementById("current-wrapping");
     var currentBoard = createBoard();
     var nextBoard = createBoard();
     const AUTOMATONS = []
 
     /* AUTOMATONS contract
+        function label() label
         function prepare() invoked once before cumputing the board's next state 
         function nextCellState(currentBoard, row, column) returns nextCellState
     */
@@ -34,6 +36,43 @@ onload = () => {
         return {
             'label': function () {
                 return "The Game Of Life";
+            },
+            'prepare': function () {
+                mooreNeighbours.fill(0);
+            },
+            'nextCellState': function (cur, row, col) {
+                countMooreNeighbours(row, col, cur, mooreNeighbours);
+                let currentCell = cur[row][col];
+                let nextState = S[currentCell][mooreNeighbours.join("")];
+                return nextState != undefined ? nextState : S[currentCell]["default"];
+            }
+        };
+    }
+
+    function getBrainOfBrianAutomaton() {
+        const S = [{
+                "026": 1,
+                "620": 1,
+                "125": 1,
+                "521": 1,
+                "224": 1,
+                "422": 1,
+                "521": 1,
+                "323": 1,
+                "default": 0
+            },
+            {
+                "default": 2
+            },
+            {
+                "default": 0
+            }
+        ];
+        const mooreNeighbours = new Array(S.length);
+
+        return {
+            'label': function () {
+                return "The Brain of Brian";
             },
             'prepare': function () {
                 mooreNeighbours.fill(0);
@@ -144,9 +183,9 @@ onload = () => {
             'prepare': function () {},
             'nextCellState': function (cur, row, col) {
                 const currentCell = cur[row][col];
-                const r = row - 1 < 0 ? 0 : row - 1;
-                const cUp = wrappingNextCoord(col + 1, COLS);
-                const cDown = wrappingNextCoord(col - 1, COLS);
+                const r = currentIndexProvider.nextRow(row - 1, ROWS);
+                const cUp = currentIndexProvider.nextCol(col + 1, COLS);
+                const cDown = currentIndexProvider.nextCol(col - 1, COLS);
                 if (currentCell == 1) {
                     return 1;
                 } else if (row != 0 && currentCell == 0 && cur[r][cDown] != cur[r][col]) {
@@ -158,9 +197,72 @@ onload = () => {
             }
         };
     }
-    // END AUTOMATONS
-    var currentAutomaton = null;
+    // END INDEX_PROVIDERS
+    const INDEX_PROVIDERS = []
 
+    /* INDEX_PROVIDERS contract
+        function label() label
+        function nextRow(row, totalRows) returns -1 if row < 0 || row >= totalRows
+        functionCol(col, totalCols) returns -1 if col < 0 || col >= totalCols
+    */
+    function getWrappingIndexProvider() {
+        return {
+            'label': function () {
+                return "Wrap Columns And Rows";
+            },
+            'nextRow': function (row, totalRows) {
+                return row < 0 ? totalRows - 1 : row >= totalRows ? 0 : row;
+            },
+            'nextCol': function (col, totalCols) {
+                return col < 0 ? totalCols - 1 : col >= totalCols ? 0 : col;
+            }
+        }
+    }
+
+    function getWrappingColOnlyIndexProvider() {
+        return {
+            'label': function () {
+                return "Wrap Columns But Not Rows";
+            },
+            'nextRow': function (row, totalRows) {
+                return row < 0 ? 1 : row >= totalRows ? -1 : row;
+            },
+            'nextCol': function (col, totalCols) {
+                return col < 0 ? totalCols - 1 : col >= totalCols ? 0 : col;
+            }
+        }
+    }
+
+    function getWrappingRowOnlyIndexProvider() {
+        return {
+            'label': function () {
+                return "Wrap Rows But Not Columns";
+            },
+            'nextRow': function (row, totalRows) {
+                return row < 0 ? 1 : row >= totalRows ? -1 : row;
+            },
+            'nextCol': function (col, totalCols) {
+                return col < 0 ? totalCols - 1 : col >= totalCols ? 0 : col;
+            }
+        }
+    }
+
+    function getNonWrappingIndexProvider() {
+        return {
+            'label': function () {
+                return "Don't Wrap Rows or Columns";
+            },
+            'nextRow': function (row, totalRows) {
+                return row < 0 ? 1 : row >= totalRows ? -1 : row;
+            },
+            'nextCol': function (col, totalCols) {
+                return col < 0 ? 1 : col >= totalCols ? -1 : col;
+            }
+        }
+    }
+    // END INDEX_PROVIDERS
+    var currentAutomaton = null;
+    var currentIndexProvider = null;
     const colours = [];
     init();
     var animate = null;
@@ -169,13 +271,21 @@ onload = () => {
         colours.push("#202020");
         colours.push("#008000");
         colours.push("#000080");
+
+        INDEX_PROVIDERS.push(getNonWrappingIndexProvider());
+        INDEX_PROVIDERS.push(getWrappingIndexProvider());
+        INDEX_PROVIDERS.push(getWrappingColOnlyIndexProvider());
+        INDEX_PROVIDERS.push(getWrappingRowOnlyIndexProvider());
+        currentIndexProvider = INDEX_PROVIDERS[0];
+
         AUTOMATONS.push(getGameOfLifeAutomaton());
         AUTOMATONS.push(someCoolSymmetricAutomaton());
         AUTOMATONS.push(someSeedAutomaton());
         AUTOMATONS.push(some3ColourSeedAutomaton());
         AUTOMATONS.push(sirpinskisTriangleAutomaton());
-
+        AUTOMATONS.push(getBrainOfBrianAutomaton());
         currentAutomaton = AUTOMATONS[0];
+
         currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
         const dropdownContent = document.getElementById("automatons-dropdown-content");
         for (var i = 0; i < AUTOMATONS.length; i++) {
@@ -190,6 +300,26 @@ onload = () => {
         const dropdownButton = document.getElementById("automatons-dropbtn");
         dropdownButton.addEventListener("click", () => {
             dropdownContent.classList.toggle("show");
+        });
+
+        currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
+        const wrappingContent = document.getElementById("wrapping-dropdown-content");
+        for (var i = 0; i < INDEX_PROVIDERS.length; i++) {
+            let a = document.createElement("a");
+            const selection = i;
+            a.onclick = () => {
+                currentIndexProvider = INDEX_PROVIDERS[selection];
+                currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
+                wrappingContent.classList.toggle("show");
+            };
+            a.href = '#';
+            a.textContent = INDEX_PROVIDERS[i].label();
+            a.classList = ["dropdown-content-a"];
+            wrappingContent.appendChild(a);
+        }
+        const wrappingDropdownButton = document.getElementById("wrapping-dropbtn");
+        wrappingDropdownButton.addEventListener("click", () => {
+            wrappingContent.classList.toggle("show");
         });
     }
 
@@ -265,18 +395,14 @@ onload = () => {
         for (let drow = -1; drow <= 1; ++drow) {
             for (let dcol = -1; dcol <= 1; ++dcol) {
                 if (drow != 0 || dcol != 0) {
-                    const r = wrappingNextCoord(row + drow, ROWS);
-                    const c = wrappingNextCoord(col + dcol, COLS);
-                    if (0 <= r && r < ROWS && 0 <= c && c < COLS) {
+                    const r = currentIndexProvider.nextRow(row + drow, ROWS);
+                    const c = currentIndexProvider.nextCol(col + dcol, COLS);
+                    if (r > -1 && c > -1) {
                         neighbours[cur[r][c]]++;
                     }
                 }
             }
         }
-    }
-
-    function wrappingNextCoord(i, limit) {
-        return i < 0 ? limit - 1 : i >= limit ? 0 : i;
     }
 
     function renderGrid(ctx, cur) {
