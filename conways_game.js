@@ -22,12 +22,15 @@ onload = () => {
     */
     function getGameOfLifeAutomaton() {
         const S = [{
-                "53": 1,
+                "530": 1,
                 "default": 0
             },
             {
-                "53": 1,
-                "62": 1,
+                "530": 1,
+                "620": 1,
+                "default": 0
+            },
+            {
                 "default": 0
             }
         ];
@@ -88,13 +91,16 @@ onload = () => {
 
     function someCoolSymmetricAutomaton() {
         const S = [{
-                "62": 1,
-                "71": 1,
+                "620": 1,
+                "710": 1,
                 "default": 0
             },
             {
-                "62": 1,
-                "53": 0,
+                "620": 1,
+                "530": 0,
+                "default": 0
+            },
+            {
                 "default": 0
             }
         ];
@@ -117,11 +123,14 @@ onload = () => {
 
     function someSeedAutomaton() {
         const S = [{
-                "62": 1,
+                "620": 1,
                 "default": 0
             },
             {
-                "62": 1,
+                "620": 1,
+                "default": 0
+            },
+            {
                 "default": 0
             }
         ];
