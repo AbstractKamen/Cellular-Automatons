@@ -1,11 +1,14 @@
 onload = () => {
-    const COLS = 128;
-    const ROWS = 128;
     const canvas = document.getElementById("game");
-    canvas.height = 400;
-    canvas.width = 400;
-    const CELL_WIDTH = canvas.width / COLS;
-    const CELL_HEIGHT = canvas.height / ROWS;
+    canvas.height = 800;
+    canvas.width = 600;
+
+    const CELL_WIDTH = 4;
+    const CELL_HEIGHT = CELL_WIDTH;
+
+    const ROWS = Math.floor((canvas.height / CELL_WIDTH));
+    const COLS = Math.floor(canvas.width / CELL_WIDTH);
+
     const ctx = canvas.getContext("2d");
     ctx.fillStyle = "#202020";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
@@ -108,6 +111,64 @@ onload = () => {
         return {
             'label': function () {
                 return "Cool Symmetric";
+            },
+            'prepare': function () {
+                mooreNeighbours.fill(0);
+            },
+            'nextCellState': function (cur, row, col) {
+                countMooreNeighbours(row, col, cur, mooreNeighbours);
+                let currentCell = cur[row][col];
+                let nextState = S[currentCell][mooreNeighbours.join("")];
+                return nextState != undefined ? nextState : S[currentCell]["default"];
+            }
+        };
+    }
+
+    function seedDashAutomaton() {
+        const S = [{
+                "710": 1,
+                "default": 0
+            },
+            {
+                "default": 2
+            },
+            {
+                "default": 0
+            }
+        ];
+        const mooreNeighbours = new Array(S.length);
+        return {
+            'label': function () {
+                return "Seed Dashes";
+            },
+            'prepare': function () {
+                mooreNeighbours.fill(0);
+            },
+            'nextCellState': function (cur, row, col) {
+                countMooreNeighbours(row, col, cur, mooreNeighbours);
+                let currentCell = cur[row][col];
+                let nextState = S[currentCell][mooreNeighbours.join("")];
+                return nextState != undefined ? nextState : S[currentCell]["default"];
+            }
+        };
+    }
+
+    function dancingSquaresAutomaton() {
+        const S = [{
+                "710": 1,
+                "default": 0
+            },
+            {
+                "default": 0
+            },
+            {
+                "default": 0
+            }
+        ];
+        const mooreNeighbours = new Array(S.length);
+        return {
+            'label': function () {
+                return "Dancing Squares";
             },
             'prepare': function () {
                 mooreNeighbours.fill(0);
@@ -234,7 +295,7 @@ onload = () => {
                 return "Wrap Columns But Not Rows";
             },
             'nextRow': function (row, totalRows) {
-                return row < 0 ? 1 : row >= totalRows ? -1 : row;
+                return row < 0 ? -1 : row >= totalRows ? -1 : row;
             },
             'nextCol': function (col, totalCols) {
                 return col < 0 ? totalCols - 1 : col >= totalCols ? 0 : col;
@@ -248,10 +309,10 @@ onload = () => {
                 return "Wrap Rows But Not Columns";
             },
             'nextRow': function (row, totalRows) {
-                return row < 0 ? 1 : row >= totalRows ? -1 : row;
+                return row < 0 ? totalRows - 1 : row >= totalRows ? 0 : row;
             },
             'nextCol': function (col, totalCols) {
-                return col < 0 ? totalCols - 1 : col >= totalCols ? 0 : col;
+                return col < 0 ? -1 : col >= totalCols ? -1 : col;
             }
         }
     }
@@ -262,10 +323,10 @@ onload = () => {
                 return "Don't Wrap Rows or Columns";
             },
             'nextRow': function (row, totalRows) {
-                return row < 0 ? 1 : row >= totalRows ? -1 : row;
+                return row < 0 ? -1 : row >= totalRows ? -1 : row;
             },
             'nextCol': function (col, totalCols) {
-                return col < 0 ? 1 : col >= totalCols ? -1 : col;
+                return col < 0 ? -1 : col >= totalCols ? -1 : col;
             }
         }
     }
@@ -285,15 +346,18 @@ onload = () => {
         INDEX_PROVIDERS.push(getWrappingIndexProvider());
         INDEX_PROVIDERS.push(getWrappingColOnlyIndexProvider());
         INDEX_PROVIDERS.push(getWrappingRowOnlyIndexProvider());
-        currentIndexProvider = INDEX_PROVIDERS[0];
+        currentIndexProvider = INDEX_PROVIDERS[1];
 
         AUTOMATONS.push(getGameOfLifeAutomaton());
         AUTOMATONS.push(someCoolSymmetricAutomaton());
+        AUTOMATONS.push(dancingSquaresAutomaton());
         AUTOMATONS.push(someSeedAutomaton());
         AUTOMATONS.push(some3ColourSeedAutomaton());
         AUTOMATONS.push(sirpinskisTriangleAutomaton());
         AUTOMATONS.push(getBrainOfBrianAutomaton());
-        currentAutomaton = AUTOMATONS[0];
+        AUTOMATONS.push(seedDashAutomaton());
+        currentAutomaton = AUTOMATONS[1];
+        currentBoard[0][0] = 1;
 
         currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
         const dropdownContent = document.getElementById("automatons-dropdown-content");
