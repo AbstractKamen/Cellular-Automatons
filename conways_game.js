@@ -293,10 +293,10 @@ function sirpinskisTriangleAutomaton() {
             const cDown = currentIndexProvider.nextCol(col - 1, cols);
             if (currentCell == 1) {
                 return 1;
-            } else if (row != 0 && currentCell == 0 && cur[r][cDown] != cur[r][col]) {
-                return cur[r][col] + cur[r][cDown] <= 2 ? 1 : 0;
-            } else if (row != 0 && currentCell == 0 && cur[r][col] != cur[r][cUp]) {
-                return cur[r][col] + cur[r][cUp] <= 2 ? 1 : 0;
+            } else if (cDown > -1 && r > -1 && currentCell == 0 && cur[r][cDown] != cur[r][col]) {
+                return cur[r][col] + cur[r][cDown] % 3;
+            } else if (cUp > -1 && r > -1 && currentCell == 0 && cur[r][col] != cur[r][cUp]) {
+                return cur[r][col] + cur[r][cUp] % 3;
             }
             return 0;
         }
@@ -315,10 +315,66 @@ function getWrappingIndexProvider() {
             return "Wrap Columns And Rows";
         },
         'nextRow': function (row, totalRows) {
-            return row % totalRows;
+            return row < 0 ? totalRows - 1 : row % totalRows;
         },
         'nextCol': function (col, totalCols) {
-            return col % totalCols;
+            return col < 0 ? totalCols - 1 : col % totalCols;
+        }
+    }
+}
+
+function getWrappingColOnlyIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Columns But Not Rows";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? -1 : row >= totalRows ? -1 : row;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? totalCols - 1 : col % totalCols;
+        }
+    }
+}
+
+function getWrappingRowOnlyIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Rows But Not Columns";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? totalRows - 1 : row % totalRows;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? -1 : col >= totalCols ? -1 : col;
+        }
+    }
+}
+
+function getWrappingTopOnlyIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Top to Bottom";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? totalRows - 1 : row >= totalRows ? -1 : row;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? -1 : col >= totalCols ? -1 : col;
+        }
+    }
+}
+
+function getWrappingBottomOnlyIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Bottom to Top";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? -1 : row % totalRows;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? -1 : col >= totalCols ? -1 : col;
         }
     }
 }
@@ -344,7 +400,7 @@ function init() {
     canvas.height = 800;
     canvas.width = 600;
 
-    cellWidth = 5;
+    cellWidth = 4;
     cellHeight = cellWidth;
 
     rows = Math.floor((canvas.height / cellWidth));
@@ -361,6 +417,8 @@ function init() {
 
     INDEX_PROVIDERS.push(getNonWrappingIndexProvider());
     INDEX_PROVIDERS.push(getWrappingIndexProvider());
+    INDEX_PROVIDERS.push(getWrappingColOnlyIndexProvider());
+    INDEX_PROVIDERS.push(getWrappingRowOnlyIndexProvider());
     currentIndexProvider = INDEX_PROVIDERS[1];
     AUTOMATONS.push(getGameOfLifeAutomaton());
     AUTOMATONS.push(someCoolSymmetricAutomaton());
