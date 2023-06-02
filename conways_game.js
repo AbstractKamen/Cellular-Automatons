@@ -1,441 +1,464 @@
+const AUTOMATONS = []
+const INDEX_PROVIDERS = []
+const colours = [];
+var isDrawing;
+var brushDiameter;
+var currentBrushColour;
+var canvas;
+var ctx;
+var cellWidth;
+var cellHeight;
+var rows;
+var cols;
+var currentBoard;
+var nextBoard;
+var currentAutomaton;
+var currentIndexProvider;
+var animate;
 onload = () => {
-    const canvas = document.getElementById("game");
+    init();
+}
+
+/* AUTOMATONS contract
+    function label() label
+    function prepare() invoked once before cumputing the board's next state 
+    function nextCellState(currentBoard, row, column) returns nextCellState
+*/
+function getGameOfLifeAutomaton() {
+    const S = [{
+            "530": 1,
+            "default": 0
+        },
+        {
+            "530": 1,
+            "620": 1,
+            "default": 0
+        },
+        {
+            "default": 0
+        }
+    ];
+    const mooreNeighbours = new Array(S.length);
+
+    return {
+        'label': function () {
+            return "The Game Of Life";
+        },
+        'prepare': function () {
+            mooreNeighbours.fill(0);
+        },
+        'nextCellState': function (cur, row, col) {
+            countMooreNeighbours(row, col, cur, mooreNeighbours);
+            let currentCell = cur[row][col];
+            let nextState = S[currentCell][mooreNeighbours.join("")];
+            return nextState != undefined ? nextState : S[currentCell]["default"];
+        }
+    };
+}
+
+function getWireAutomaton() {
+    const S = [{
+            "026": 1,
+            "620": 1,
+            "125": 1,
+            "521": 1,
+            "224": 1,
+            "422": 1,
+            "521": 1,
+            "323": 1,
+            "default": 0
+        },
+        {
+            "default": 2
+        },
+        {
+            "default": 0
+        }
+    ];
+    const mooreNeighbours = new Array(S.length);
+
+    return {
+        'label': function () {
+            return "The Brain of Brian";
+        },
+        'prepare': function () {
+            mooreNeighbours.fill(0);
+        },
+        'nextCellState': function (cur, row, col) {
+            countMooreNeighbours(row, col, cur, mooreNeighbours);
+            let currentCell = cur[row][col];
+            let nextState = S[currentCell][mooreNeighbours.join("")];
+            return nextState != undefined ? nextState : S[currentCell]["default"];
+        }
+    };
+}
+
+function getBrainOfBrianAutomaton() {
+    const S = [{
+            "026": 1,
+            "620": 1,
+            "125": 1,
+            "521": 1,
+            "224": 1,
+            "422": 1,
+            "521": 1,
+            "323": 1,
+            "default": 0
+        },
+        {
+            "default": 2
+        },
+        {
+            "default": 0
+        }
+    ];
+    const mooreNeighbours = new Array(S.length);
+
+    return {
+        'label': function () {
+            return "The Brain of Brian";
+        },
+        'prepare': function () {
+            mooreNeighbours.fill(0);
+        },
+        'nextCellState': function (cur, row, col) {
+            countMooreNeighbours(row, col, cur, mooreNeighbours);
+            let currentCell = cur[row][col];
+            let nextState = S[currentCell][mooreNeighbours.join("")];
+            return nextState != undefined ? nextState : S[currentCell]["default"];
+        }
+    };
+}
+
+function someCoolSymmetricAutomaton() {
+    const S = [{
+            "620": 1,
+            "710": 1,
+            "default": 0
+        },
+        {
+            "620": 1,
+            "530": 0,
+            "default": 0
+        },
+        {
+            "default": 0
+        }
+    ];
+    const mooreNeighbours = new Array(S.length);
+    return {
+        'label': function () {
+            return "Cool Symmetric";
+        },
+        'prepare': function () {
+            mooreNeighbours.fill(0);
+        },
+        'nextCellState': function (cur, row, col) {
+            countMooreNeighbours(row, col, cur, mooreNeighbours);
+            let currentCell = cur[row][col];
+            let nextState = S[currentCell][mooreNeighbours.join("")];
+            return nextState != undefined ? nextState : S[currentCell]["default"];
+        }
+    };
+}
+
+function seedDashAutomaton() {
+    const S = [{
+            "710": 1,
+            "default": 0
+        },
+        {
+            "default": 2
+        },
+        {
+            "default": 0
+        }
+    ];
+    const mooreNeighbours = new Array(S.length);
+    return {
+        'label': function () {
+            return "Seed Dashes";
+        },
+        'prepare': function () {
+            mooreNeighbours.fill(0);
+        },
+        'nextCellState': function (cur, row, col) {
+            countMooreNeighbours(row, col, cur, mooreNeighbours);
+            let currentCell = cur[row][col];
+            let nextState = S[currentCell][mooreNeighbours.join("")];
+            return nextState != undefined ? nextState : S[currentCell]["default"];
+        }
+    };
+}
+
+function dancingSquaresAutomaton() {
+    const S = [{
+            "710": 1,
+            "default": 0
+        },
+        {
+            "default": 0
+        },
+        {
+            "default": 0
+        }
+    ];
+    const mooreNeighbours = new Array(S.length);
+    return {
+        'label': function () {
+            return "Dancing Squares";
+        },
+        'prepare': function () {
+            mooreNeighbours.fill(0);
+        },
+        'nextCellState': function (cur, row, col) {
+            countMooreNeighbours(row, col, cur, mooreNeighbours);
+            let currentCell = cur[row][col];
+            let nextState = S[currentCell][mooreNeighbours.join("")];
+            return nextState != undefined ? nextState : S[currentCell]["default"];
+        }
+    };
+}
+
+function someSeedAutomaton() {
+    const S = [{
+            "620": 1,
+            "default": 0
+        },
+        {
+            "620": 1,
+            "default": 0
+        },
+        {
+            "default": 0
+        }
+    ];
+    const mooreNeighbours = new Array(S.length);
+    return {
+        'label': function () {
+            return "Looks Like Seed But Not Quite";
+        },
+        'prepare': function () {
+            mooreNeighbours.fill(0);
+        },
+        'nextCellState': function (cur, row, col) {
+            countMooreNeighbours(row, col, cur, mooreNeighbours);
+            let currentCell = cur[row][col];
+            let nextState = S[currentCell][mooreNeighbours.join("")];
+            return nextState != undefined ? nextState : S[currentCell]["default"];
+        }
+    };
+}
+
+function some3ColourSeedAutomaton() {
+    const S = [{
+            "620": 1,
+            "530": 2,
+            "default": 0
+        },
+        {
+            "620": 1,
+            "530": 2,
+            "default": 0
+        }, {
+            "620": 1,
+            "530": 2,
+            "default": 0
+        }
+    ];
+    const mooreNeighbours = new Array(S.length);
+    return {
+        'label': function () {
+            return "Looks Like Seed But Not Quite Three colours";
+        },
+        'prepare': function () {
+            mooreNeighbours.fill(0);
+        },
+        'nextCellState': function (cur, row, col) {
+            countMooreNeighbours(row, col, cur, mooreNeighbours);
+            let currentCell = cur[row][col];
+            let nextState = S[currentCell][mooreNeighbours.join("")];
+            return nextState != undefined ? nextState : S[currentCell]["default"];
+        }
+    };
+}
+
+function sirpinskisTriangleAutomaton() {
+    return {
+        'label': function () {
+            return "Paint Sirpinski Triangles";
+        },
+        'prepare': function () {},
+        'nextCellState': function (cur, row, col) {
+            const currentCell = cur[row][col];
+            const r = currentIndexProvider.nextRow(row - 1, rows);
+            const cUp = currentIndexProvider.nextCol(col + 1, cols);
+            const cDown = currentIndexProvider.nextCol(col - 1, cols);
+            if (currentCell == 1) {
+                return 1;
+            } else if (cDown > -1 && r > -1 && currentCell == 0 && cur[r][cDown] != cur[r][col]) {
+                return cur[r][col] + cur[r][cDown] % 3;
+            } else if (cUp > -1 && r > -1 && currentCell == 0 && cur[r][col] != cur[r][cUp]) {
+                return cur[r][col] + cur[r][cUp] % 3;
+            }
+            return 0;
+        }
+    };
+}
+// END AUTOMATONS
+
+/* INDEX_PROVIDERS contract
+    function label() label
+    function nextRow(row, totalRows) returns -1 if row < 0 || row >= totalRows
+    functionCol(col, totalCols) returns -1 if col < 0 || col >= totalCols
+*/
+function getWrappingIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Columns And Rows";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? totalRows - 1 : row % totalRows;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? totalCols - 1 : col % totalCols;
+        }
+    }
+}
+
+function getWrappingColOnlyIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Columns But Not Rows";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? -1 : row >= totalRows ? -1 : row;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? totalCols - 1 : col % totalCols;
+        }
+    }
+}
+
+function getWrappingRowOnlyIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Rows But Not Columns";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? totalRows - 1 : row % totalRows;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? -1 : col >= totalCols ? -1 : col;
+        }
+    }
+}
+
+function getWrappingTopOnlyIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Top to Bottom";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? totalRows - 1 : row >= totalRows ? -1 : row;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? -1 : col >= totalCols ? -1 : col;
+        }
+    }
+}
+
+function getWrappingBottomOnlyIndexProvider() {
+    return {
+        'label': function () {
+            return "Wrap Bottom to Top";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? -1 : row % totalRows;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? -1 : col >= totalCols ? -1 : col;
+        }
+    }
+}
+
+function getNonWrappingIndexProvider() {
+    return {
+        'label': function () {
+            return "Don't Wrap Rows or Columns";
+        },
+        'nextRow': function (row, totalRows) {
+            return row < 0 ? -1 : row >= totalRows ? -1 : row;
+        },
+        'nextCol': function (col, totalCols) {
+            return col < 0 ? -1 : col >= totalCols ? -1 : col;
+        }
+    }
+}
+// END INDEX_PROVIDERS
+
+function init() {
+    currentBrushColour = 1;
+    brushDiameter = 1;
+    animate = null;
+    canvas = document.getElementById("game");
     canvas.height = 800;
     canvas.width = 600;
 
-    const CELL_WIDTH = 4;
-    const CELL_HEIGHT = CELL_WIDTH;
+    cellWidth = 4;
+    cellHeight = cellWidth;
 
-    const ROWS = Math.floor((canvas.height / CELL_WIDTH));
-    const COLS = Math.floor(canvas.width / CELL_WIDTH);
+    rows = Math.floor((canvas.height / cellWidth));
+    cols = Math.floor(canvas.width / cellWidth);
 
-    const ctx = canvas.getContext("2d");
+    ctx = canvas.getContext("2d");
     ctx.fillStyle = "#202020";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
+    currentBoard = createBoard();
+    nextBoard = createBoard();
+    colours.push("#202020");
+    colours.push("#008000");
+    colours.push("#000080");
+
+    INDEX_PROVIDERS.push(getNonWrappingIndexProvider());
+    INDEX_PROVIDERS.push(getWrappingIndexProvider());
+    INDEX_PROVIDERS.push(getWrappingColOnlyIndexProvider());
+    INDEX_PROVIDERS.push(getWrappingRowOnlyIndexProvider());
+    currentIndexProvider = INDEX_PROVIDERS[1];
+    AUTOMATONS.push(getGameOfLifeAutomaton());
+    AUTOMATONS.push(someCoolSymmetricAutomaton());
+    AUTOMATONS.push(dancingSquaresAutomaton());
+    AUTOMATONS.push(someSeedAutomaton());
+    AUTOMATONS.push(some3ColourSeedAutomaton());
+    AUTOMATONS.push(sirpinskisTriangleAutomaton());
+    AUTOMATONS.push(getBrainOfBrianAutomaton());
+    AUTOMATONS.push(seedDashAutomaton());
+    currentAutomaton = AUTOMATONS[1];
+    currentBoard[0][0] = 1;
+    renderGrid(ctx, currentBoard);
     const currentAutomatonDisplay = document.getElementById("current");
-    const currentWrappingDisplay = document.getElementById("current-wrapping");
-    var currentBoard = createBoard();
-    var nextBoard = createBoard();
-    const AUTOMATONS = []
-
-    /* AUTOMATONS contract
-        function label() label
-        function prepare() invoked once before cumputing the board's next state 
-        function nextCellState(currentBoard, row, column) returns nextCellState
-    */
-    function getGameOfLifeAutomaton() {
-        const S = [{
-                "530": 1,
-                "default": 0
-            },
-            {
-                "530": 1,
-                "620": 1,
-                "default": 0
-            },
-            {
-                "default": 0
-            }
-        ];
-        const mooreNeighbours = new Array(S.length);
-
-        return {
-            'label': function () {
-                return "The Game Of Life";
-            },
-            'prepare': function () {
-                mooreNeighbours.fill(0);
-            },
-            'nextCellState': function (cur, row, col) {
-                countMooreNeighbours(row, col, cur, mooreNeighbours);
-                let currentCell = cur[row][col];
-                let nextState = S[currentCell][mooreNeighbours.join("")];
-                return nextState != undefined ? nextState : S[currentCell]["default"];
-            }
-        };
-    }
-
-    function getBrainOfBrianAutomaton() {
-        const S = [{
-                "026": 1,
-                "620": 1,
-                "125": 1,
-                "521": 1,
-                "224": 1,
-                "422": 1,
-                "521": 1,
-                "323": 1,
-                "default": 0
-            },
-            {
-                "default": 2
-            },
-            {
-                "default": 0
-            }
-        ];
-        const mooreNeighbours = new Array(S.length);
-
-        return {
-            'label': function () {
-                return "The Brain of Brian";
-            },
-            'prepare': function () {
-                mooreNeighbours.fill(0);
-            },
-            'nextCellState': function (cur, row, col) {
-                countMooreNeighbours(row, col, cur, mooreNeighbours);
-                let currentCell = cur[row][col];
-                let nextState = S[currentCell][mooreNeighbours.join("")];
-                return nextState != undefined ? nextState : S[currentCell]["default"];
-            }
-        };
-    }
-
-    function someCoolSymmetricAutomaton() {
-        const S = [{
-                "620": 1,
-                "710": 1,
-                "default": 0
-            },
-            {
-                "620": 1,
-                "530": 0,
-                "default": 0
-            },
-            {
-                "default": 0
-            }
-        ];
-        const mooreNeighbours = new Array(S.length);
-        return {
-            'label': function () {
-                return "Cool Symmetric";
-            },
-            'prepare': function () {
-                mooreNeighbours.fill(0);
-            },
-            'nextCellState': function (cur, row, col) {
-                countMooreNeighbours(row, col, cur, mooreNeighbours);
-                let currentCell = cur[row][col];
-                let nextState = S[currentCell][mooreNeighbours.join("")];
-                return nextState != undefined ? nextState : S[currentCell]["default"];
-            }
-        };
-    }
-
-    function seedDashAutomaton() {
-        const S = [{
-                "710": 1,
-                "default": 0
-            },
-            {
-                "default": 2
-            },
-            {
-                "default": 0
-            }
-        ];
-        const mooreNeighbours = new Array(S.length);
-        return {
-            'label': function () {
-                return "Seed Dashes";
-            },
-            'prepare': function () {
-                mooreNeighbours.fill(0);
-            },
-            'nextCellState': function (cur, row, col) {
-                countMooreNeighbours(row, col, cur, mooreNeighbours);
-                let currentCell = cur[row][col];
-                let nextState = S[currentCell][mooreNeighbours.join("")];
-                return nextState != undefined ? nextState : S[currentCell]["default"];
-            }
-        };
-    }
-
-    function dancingSquaresAutomaton() {
-        const S = [{
-                "710": 1,
-                "default": 0
-            },
-            {
-                "default": 0
-            },
-            {
-                "default": 0
-            }
-        ];
-        const mooreNeighbours = new Array(S.length);
-        return {
-            'label': function () {
-                return "Dancing Squares";
-            },
-            'prepare': function () {
-                mooreNeighbours.fill(0);
-            },
-            'nextCellState': function (cur, row, col) {
-                countMooreNeighbours(row, col, cur, mooreNeighbours);
-                let currentCell = cur[row][col];
-                let nextState = S[currentCell][mooreNeighbours.join("")];
-                return nextState != undefined ? nextState : S[currentCell]["default"];
-            }
-        };
-    }
-
-    function someSeedAutomaton() {
-        const S = [{
-                "620": 1,
-                "default": 0
-            },
-            {
-                "620": 1,
-                "default": 0
-            },
-            {
-                "default": 0
-            }
-        ];
-        const mooreNeighbours = new Array(S.length);
-        return {
-            'label': function () {
-                return "Looks Like Seed But Not Quite";
-            },
-            'prepare': function () {
-                mooreNeighbours.fill(0);
-            },
-            'nextCellState': function (cur, row, col) {
-                countMooreNeighbours(row, col, cur, mooreNeighbours);
-                let currentCell = cur[row][col];
-                let nextState = S[currentCell][mooreNeighbours.join("")];
-                return nextState != undefined ? nextState : S[currentCell]["default"];
-            }
-        };
-    }
-
-    function some3ColourSeedAutomaton() {
-        const S = [{
-                "620": 1,
-                "530": 2,
-                "default": 0
-            },
-            {
-                "620": 1,
-                "530": 2,
-                "default": 0
-            }, {
-                "620": 1,
-                "530": 2,
-                "default": 0
-            }
-        ];
-        const mooreNeighbours = new Array(S.length);
-        return {
-            'label': function () {
-                return "Looks Like Seed But Not Quite Three colours";
-            },
-            'prepare': function () {
-                mooreNeighbours.fill(0);
-            },
-            'nextCellState': function (cur, row, col) {
-                countMooreNeighbours(row, col, cur, mooreNeighbours);
-                let currentCell = cur[row][col];
-                let nextState = S[currentCell][mooreNeighbours.join("")];
-                return nextState != undefined ? nextState : S[currentCell]["default"];
-            }
-        };
-    }
-
-    function sirpinskisTriangleAutomaton() {
-        return {
-            'label': function () {
-                return "Paint Sirpinski Triangles";
-            },
-            'prepare': function () {},
-            'nextCellState': function (cur, row, col) {
-                const currentCell = cur[row][col];
-                const r = currentIndexProvider.nextRow(row - 1, ROWS);
-                const cUp = currentIndexProvider.nextCol(col + 1, COLS);
-                const cDown = currentIndexProvider.nextCol(col - 1, COLS);
-                if (currentCell == 1) {
-                    return 1;
-                } else if (row != 0 && currentCell == 0 && cur[r][cDown] != cur[r][col]) {
-                    return cur[r][col] + cur[r][cDown] <= 2 ? 1 : 0;
-                } else if (row != 0 && currentCell == 0 && cur[r][col] != cur[r][cUp]) {
-                    return cur[r][col] + cur[r][cUp] <= 2 ? 1 : 0;
-                }
-                return 0;
-            }
-        };
-    }
-    // END INDEX_PROVIDERS
-    const INDEX_PROVIDERS = []
-
-    /* INDEX_PROVIDERS contract
-        function label() label
-        function nextRow(row, totalRows) returns -1 if row < 0 || row >= totalRows
-        functionCol(col, totalCols) returns -1 if col < 0 || col >= totalCols
-    */
-    function getWrappingIndexProvider() {
-        return {
-            'label': function () {
-                return "Wrap Columns And Rows";
-            },
-            'nextRow': function (row, totalRows) {
-                return row < 0 ? totalRows - 1 : row >= totalRows ? 0 : row;
-            },
-            'nextCol': function (col, totalCols) {
-                return col < 0 ? totalCols - 1 : col >= totalCols ? 0 : col;
-            }
-        }
-    }
-
-    function getWrappingColOnlyIndexProvider() {
-        return {
-            'label': function () {
-                return "Wrap Columns But Not Rows";
-            },
-            'nextRow': function (row, totalRows) {
-                return row < 0 ? -1 : row >= totalRows ? -1 : row;
-            },
-            'nextCol': function (col, totalCols) {
-                return col < 0 ? totalCols - 1 : col >= totalCols ? 0 : col;
-            }
-        }
-    }
-
-    function getWrappingRowOnlyIndexProvider() {
-        return {
-            'label': function () {
-                return "Wrap Rows But Not Columns";
-            },
-            'nextRow': function (row, totalRows) {
-                return row < 0 ? totalRows - 1 : row >= totalRows ? 0 : row;
-            },
-            'nextCol': function (col, totalCols) {
-                return col < 0 ? -1 : col >= totalCols ? -1 : col;
-            }
-        }
-    }
-
-    function getNonWrappingIndexProvider() {
-        return {
-            'label': function () {
-                return "Don't Wrap Rows or Columns";
-            },
-            'nextRow': function (row, totalRows) {
-                return row < 0 ? -1 : row >= totalRows ? -1 : row;
-            },
-            'nextCol': function (col, totalCols) {
-                return col < 0 ? -1 : col >= totalCols ? -1 : col;
-            }
-        }
-    }
-    // END INDEX_PROVIDERS
-    var currentAutomaton = null;
-    var currentIndexProvider = null;
-    const colours = [];
-    init();
-    var animate = null;
-
-    function init() {
-        colours.push("#202020");
-        colours.push("#008000");
-        colours.push("#000080");
-
-        INDEX_PROVIDERS.push(getNonWrappingIndexProvider());
-        INDEX_PROVIDERS.push(getWrappingIndexProvider());
-        INDEX_PROVIDERS.push(getWrappingColOnlyIndexProvider());
-        INDEX_PROVIDERS.push(getWrappingRowOnlyIndexProvider());
-        currentIndexProvider = INDEX_PROVIDERS[1];
-
-        AUTOMATONS.push(getGameOfLifeAutomaton());
-        AUTOMATONS.push(someCoolSymmetricAutomaton());
-        AUTOMATONS.push(dancingSquaresAutomaton());
-        AUTOMATONS.push(someSeedAutomaton());
-        AUTOMATONS.push(some3ColourSeedAutomaton());
-        AUTOMATONS.push(sirpinskisTriangleAutomaton());
-        AUTOMATONS.push(getBrainOfBrianAutomaton());
-        AUTOMATONS.push(seedDashAutomaton());
-        currentAutomaton = AUTOMATONS[1];
-        currentBoard[0][0] = 1;
-
-        currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
-        const dropdownContent = document.getElementById("automatons-dropdown-content");
-        for (var i = 0; i < AUTOMATONS.length; i++) {
-            let a = document.createElement("a");
-            const curI = i;
-            a.onclick = () => handleSelectAutomaton(dropdownContent, curI);
-            a.href = '#';
-            a.textContent = AUTOMATONS[i].label();
-            a.classList = ["dropdown-content-a"];
-            dropdownContent.appendChild(a);
-        }
-        const dropdownButton = document.getElementById("automatons-dropbtn");
-        dropdownButton.addEventListener("click", () => {
-            dropdownContent.classList.toggle("show");
-        });
-
-        currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
-        const wrappingContent = document.getElementById("wrapping-dropdown-content");
-        for (var i = 0; i < INDEX_PROVIDERS.length; i++) {
-            let a = document.createElement("a");
-            const selection = i;
-            a.onclick = () => {
-                currentIndexProvider = INDEX_PROVIDERS[selection];
-                currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
-                wrappingContent.classList.toggle("show");
-            };
-            a.href = '#';
-            a.textContent = INDEX_PROVIDERS[i].label();
-            a.classList = ["dropdown-content-a"];
-            wrappingContent.appendChild(a);
-        }
-        const wrappingDropdownButton = document.getElementById("wrapping-dropbtn");
-        wrappingDropdownButton.addEventListener("click", () => {
-            wrappingContent.classList.toggle("show");
-        });
-    }
-
-    function handleSelectAutomaton(dropdownContent, selection) {
+    currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
+    const automatonsContent = document.getElementById("automatons-dropdown-content");
+    const automatonsBtn = document.getElementById("automatons-dropbtn");
+    loadDropDownContent(automatonsContent, automatonsBtn, AUTOMATONS, (selection) => {
         doStop();
         currentAutomaton = AUTOMATONS[selection];
         currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
-        dropdownContent.classList.toggle("show");
-    };
+        automatonsContent.classList.toggle("show");
+    });
 
-    function doPlay() {
-        computeNext(currentBoard, nextBoard, currentAutomaton);
-        [currentBoard, nextBoard] = [nextBoard, currentBoard];
-        renderGrid(ctx, currentBoard);
-
-        animate = setTimeout(doPlay, 50);
-    }
-
-    canvas.addEventListener("click", (event) => {
-        let row = Math.floor(event.offsetY / CELL_HEIGHT);
-        let col = Math.floor(event.offsetX / CELL_WIDTH);
-        if (animate == null) {
-            currentBoard[row][col] = 1;
-            renderGrid(ctx, currentBoard);
-        } else {
-            doStop();
-            currentBoard[row][col] = 1;
-            doPlay();
-        }
-
-    })
-    const doStop = function () {
-        if (animate != null) {
-            clearTimeout(animate);
-            animate = null;
-        }
-    }
-    const playStop = function () {
-        if (animate != null) {
-            doStop();
-        } else {
-            doPlay();
-        }
+    const currentWrappingDisplay = document.getElementById("current-wrapping");
+    currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
+    const wrappingContent = document.getElementById("wrapping-dropdown-content");
+    const wrappingDropdownButton = document.getElementById("wrapping-dropbtn");
+    loadDropDownContent(wrappingContent, wrappingDropdownButton, INDEX_PROVIDERS, (selection) => {
+        currentIndexProvider = INDEX_PROVIDERS[selection];
+        currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
+        wrappingContent.classList.toggle("show");
+    });
+    document.getElementById("brush").value = brushDiameter;
+    document.getElementById("brush").oninput = () => {
+        brushDiameter = parseInt(document.getElementById("brush").value);
     }
     document.getElementById("play").addEventListener("click", playStop);
     document.getElementById("clear").addEventListener("click", () => {
@@ -446,46 +469,138 @@ onload = () => {
         renderGrid(ctx, currentBoard);
     })
 
-    function createBoard() {
-        return Array.from({
-            length: ROWS
-        }, (_, __) => Array.from({
-            length: COLS
-        }, (_, __) => 0));
+    // user drawing
+    const paletteCell = 32;
+    currentColourCanvas = document.getElementById("current-colour");
+    currentColourCtx = currentColourCanvas.getContext("2d");
+    currentColourCanvas.width = paletteCell;
+    currentColourCanvas.height = paletteCell;
+    currentColourCtx.fillStyle = colours[currentBrushColour];
+    currentColourCtx.fillRect(0, 0, paletteCell, paletteCell);
+
+    paletteCanvas = document.getElementById("palette");
+    paletteCanvas.addEventListener("click", (e) => {
+        let x = e.offsetX;
+        currentBrushColour = Math.floor(x / paletteCell) % colours.length;
+        currentColourCtx.fillStyle = colours[currentBrushColour];
+        currentColourCtx.fillRect(0, 0, paletteCell, paletteCell);
+    })
+    paletteCanvas.width = paletteCell * colours.length;
+    paletteCanvas.height = paletteCell * 2;
+    paletteCtx = paletteCanvas.getContext("2d");
+    let i = 0;
+
+    for (c of colours) {
+        paletteCtx.fillStyle = c;
+        paletteCtx.fillRect(i++ * paletteCell, paletteCell, paletteCell, paletteCell);
     }
 
-    function computeNext(cur, next, automaton) {
-        automaton.prepare();
-        for (let row = 0; row < ROWS; row++) {
-            for (let col = 0; col < COLS; col++) {
-                next[row][col] = automaton.nextCellState(cur, row, col);
+    function moveDraw(event) {
+        if (!isDrawing) {
+            return;
+        }
+        let mx = Math.floor(event.offsetY / cellHeight);
+        let my = Math.floor(event.offsetX / cellWidth);
+        ctx.fillStyle = colours[currentBrushColour];
+
+        const r = Math.floor(brushDiameter / 2);
+        for (let dx = Math.max(0, mx - r); Math.min(rows - 1, dx <= mx + r); ++dx) {
+            for (let dy = Math.max(0, my - r); dy <= Math.min(cols - 1, my + r); ++dy) {
+                currentBoard[dx][dy] = currentBrushColour;
+                ctx.fillRect(dy * cellWidth, dx * cellHeight, cellWidth, cellHeight);
             }
         }
     }
+    canvas.onmousemove = moveDraw;
+    canvas.ontouchmove = moveDraw;
+    canvas.onmousedown = function (e) {
+        isDrawing = true;
+    };
+    canvas.onmouseup = function (e) {
+        isDrawing = false;
+    };
+    canvas.ontouchstart = function (e) {
+        isDrawing = true;
+    };
+    canvas.ontouchend = function (e) {
+        isDrawing = false;
+    };
+}
 
-    function countMooreNeighbours(row, col, cur, neighbours) {
-        neighbours.fill(0);
-        for (let drow = -1; drow <= 1; ++drow) {
-            for (let dcol = -1; dcol <= 1; ++dcol) {
-                if (drow != 0 || dcol != 0) {
-                    const r = currentIndexProvider.nextRow(row + drow, ROWS);
-                    const c = currentIndexProvider.nextCol(col + dcol, COLS);
-                    if (r > -1 && c > -1) {
-                        neighbours[cur[r][c]]++;
-                    }
+function loadDropDownContent(contentHtmlElement, contentBtn, labeledContent, onClickFunc) {
+    for (var i = 0; i < labeledContent.length; i++) {
+        let a = document.createElement("a");
+        const curI = i;
+        a.onclick = () => onClickFunc(curI);
+        a.href = '#';
+        a.textContent = labeledContent[i].label();
+        a.classList = ["dropdown-content-a"];
+        contentHtmlElement.appendChild(a);
+    }
+    contentBtn.addEventListener("click", () => contentHtmlElement.classList.toggle("show"));
+}
+
+function doPlay() {
+    computeNext(currentBoard, nextBoard, currentAutomaton);
+    [currentBoard, nextBoard] = [nextBoard, currentBoard];
+    renderGrid(ctx, currentBoard);
+    animate = setTimeout(doPlay, 30);
+}
+
+function doStop() {
+    if (animate != null) {
+        clearTimeout(animate);
+        animate = null;
+    }
+}
+
+function playStop() {
+    if (animate != null) {
+        doStop();
+    } else {
+        doPlay();
+    }
+}
+
+function createBoard() {
+    return Array.from({
+        length: rows
+    }, (_, __) => Array.from({
+        length: cols
+    }, (_, __) => 0));
+}
+
+function computeNext(cur, next, automaton) {
+    automaton.prepare();
+    for (let row = 0; row < rows; row++) {
+        for (let col = 0; col < cols; col++) {
+            next[row][col] = automaton.nextCellState(cur, row, col);
+        }
+    }
+}
+
+function countMooreNeighbours(row, col, cur, neighbours) {
+    neighbours.fill(0);
+    for (let drow = -1; drow <= 1; ++drow) {
+        for (let dcol = -1; dcol <= 1; ++dcol) {
+            if (drow != 0 || dcol != 0) {
+                const r = currentIndexProvider.nextRow(row + drow, rows);
+                const c = currentIndexProvider.nextCol(col + dcol, cols);
+                if (r > -1 && c > -1) {
+                    neighbours[cur[r][c]]++;
                 }
             }
         }
     }
+}
 
-    function renderGrid(ctx, cur) {
-        ctx.fillStyle = colours[0];
-        ctx.fillRect(0, 0, canvas.width, canvas.height);
-        for (let row = 0; row < ROWS; ++row) {
-            for (let col = 0; col < COLS; ++col) {
-                ctx.fillStyle = colours[cur[row][col]];
-                ctx.fillRect(col * CELL_WIDTH, row * CELL_HEIGHT, CELL_WIDTH, CELL_HEIGHT);
-            }
+function renderGrid(ctx, cur) {
+    ctx.fillStyle = colours[0];
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    for (let row = 0; row < rows; ++row) {
+        for (let col = 0; col < cols; ++col) {
+            ctx.fillStyle = colours[cur[row][col]];
+            ctx.fillRect(col * cellWidth, row * cellHeight, cellWidth, cellHeight);
         }
     }
 }
