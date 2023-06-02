@@ -1,6 +1,7 @@
-const AUTOMATONS = []
-const INDEX_PROVIDERS = []
+const AUTOMATONS = [];
+const INDEX_PROVIDERS = [];
 const colours = [];
+const ongoingTouches = [];
 var isDrawing;
 var brushDiameter;
 var currentBrushColour;
@@ -15,6 +16,7 @@ var nextBoard;
 var currentAutomaton;
 var currentIndexProvider;
 var animate;
+
 onload = () => {
     init();
 }
@@ -433,8 +435,13 @@ function init() {
     AUTOMATONS.push(sirpinskisTriangleAutomaton());
     AUTOMATONS.push(getBrainOfBrianAutomaton());
     AUTOMATONS.push(seedDashAutomaton());
-    currentAutomaton = AUTOMATONS[1];
-    currentBoard[0][0] = 1;
+    currentAutomaton = AUTOMATONS[5];
+    h = currentBoard.length / 2;
+    for (r = 0; r < h; ++r) {
+        currentBoard[r][0] = 2;
+        currentBoard[r][1] = 2;
+        currentBoard[r][2] = 2;
+    }
     renderGrid(ctx, currentBoard);
     const currentAutomatonDisplay = document.getElementById("current");
     currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
@@ -495,14 +502,12 @@ function init() {
         paletteCtx.fillRect(i++ * paletteCell, paletteCell, paletteCell, paletteCell);
     }
 
-    function clickDraw(event) {
-        let mx = Math.floor(event.offsetY / cellHeight);
-        let my = Math.floor(event.offsetX / cellWidth);
+    function clickDraw(x, y) {
         ctx.fillStyle = colours[currentBrushColour];
 
         const r = Math.floor(brushDiameter / 2);
-        for (let dx = Math.max(0, mx - r); Math.min(rows - 1, dx <= mx + r); ++dx) {
-            for (let dy = Math.max(0, my - r); dy <= Math.min(cols - 1, my + r); ++dy) {
+        for (let dx = Math.max(0, x - r); Math.min(rows - 1, dx <= x + r); ++dx) {
+            for (let dy = Math.max(0, y - r); dy <= Math.min(cols - 1, y + r); ++dy) {
                 currentBoard[dx][dy] = currentBrushColour;
                 ctx.fillRect(dy * cellWidth, dx * cellHeight, cellWidth, cellHeight);
             }
@@ -513,23 +518,98 @@ function init() {
         if (!isDrawing) {
             return;
         }
-        clickDraw(event);
+        let x = Math.floor(event.offsetY / cellHeight);
+        let y = Math.floor(event.offsetX / cellWidth);
+        clickDraw(x, y);
     }
     canvas.addEventListener("click", clickDraw);
+    //mouse 
     canvas.onmousemove = moveDraw;
-    canvas.addEventListener("touchmove", moveDraw, false);
     canvas.onmousedown = function (e) {
         isDrawing = true;
     };
     canvas.onmouseup = function (e) {
         isDrawing = false;
     };
-    canvas.addEventListener("touchstart", () => {
-        isDrawing = true;
+    // touch
+
+    canvas.addEventListener("touchmove", (event) => {
+        event.preventDefault();
+        const touches = event.changedTouches;
+
+        for (let i = 0; i < touches.length; ++i) {
+            const idx = ongoingTouchIndexById(touches[i].identifier);
+
+            if (idx >= 0) {
+                let endX = touches[i].pageX;
+                let endY = touches[i].pagey;
+                for (let x = ongoingTouches[idx].pageX; x <= endX; ++x) {
+                    for (let y = ongoingTouches[idx].pageY; y <= endY; ++x) {
+                        clickDraw(Math.floor(x / cellHeight), Math.floor(y / cellWidth));
+                    }
+                }
+
+                ongoingTouches.splice(idx, 1, copyTouch(touches[i]));
+            }
+        }
+    });
+    canvas.addEventListener("touchcancel", (event) => {
+        event.preventDefault();
+        const touches = event.changedTouches;
+
+        for (let i = 0; i < touches.length; ++i) {
+            let idx = ongoingTouchIndexById(touches[i].identifier);
+            ongoingTouches.splice(idx, 1);
+        }
+    });
+    canvas.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        const touches = event.changedTouches;
+        for (let i = 0; i < touches.length; i++) {
+            ongoingTouches.push(copyTouch(touches[i]));
+            let x = Math.floor(touches[i].pageX / cellHeight);
+            let y = Math.floor(touches[i].pageY / cellWidth);
+            clickDraw(x, y);
+        }
     }, false);
-    canvas.addEventListener("touchend", () => {
-        isDrawing = false;
+    canvas.addEventListener("touchend", (event) => {
+        event.preventDefault();
+        const touches = event.changedTouches;
+
+        for (let i = 0; i < touches.length; i++) {
+            let idx = ongoingTouchIndexById(touches[i].identifier);
+
+            if (idx >= 0) {
+                let x = Math.floor(touches[i].pageX / cellHeight);
+                let y = Math.floor(touches[i].pageY / cellWidth);
+                clickDraw(x, y);
+                ongoingTouches.splice(idx, 1);
+            }
+        }
     }, false);
+
+    function copyTouch({
+        identifier,
+        pageX,
+        pageY
+    }) {
+        return {
+            identifier,
+            pageX,
+            pageY
+        };
+    }
+
+    function ongoingTouchIndexById(idToFind) {
+        for (let i = 0; i < ongoingTouches.length; i++) {
+            const id = ongoingTouches[i].identifier;
+            if (id === idToFind) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
 }
 
 function loadDropDownContent(contentHtmlElement, contentBtn, labeledContent, onClickFunc) {
