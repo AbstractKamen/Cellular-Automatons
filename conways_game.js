@@ -508,7 +508,7 @@ function init() {
         ctx.fillStyle = colours[currentBrushColour];
 
         const r = Math.floor(brushDiameter / 2);
-        for (let dx = Math.max(0, x - r); Math.min(rows - 1, dx <= x + r); ++dx) {
+        for (let dx = Math.max(0, x - r); dx <= Math.min(rows - 1, x + r); ++dx) {
             for (let dy = Math.max(0, y - r); dy <= Math.min(cols - 1, y + r); ++dy) {
                 currentBoard[dx][dy] = currentBrushColour;
                 ctx.fillRect(dy * cellWidth, dx * cellHeight, cellWidth, cellHeight);
@@ -536,15 +536,15 @@ function init() {
     canvas.addEventListener("touchmove", (event) => {
         event.preventDefault();
         const touches = event.changedTouches;
-
+        const o = offset(canvas);
         for (let i = 0; i < touches.length; ++i) {
             const idx = ongoingTouchIndexById(touches[i].identifier);
 
             if (idx >= 0) {
-                let endX = getTouchX(touches[i]);
-                let endY = getTouchY(touches[i]);
-                for (let x = getTouchX(ongoingTouches[i]); x <= endX; x += brushDiameter) {
-                    for (let y = getTouchY(ongoingTouches[i]); y <= endY; y += brushDiameter) {
+                let endX = getTouchX(touches[i]) - o.y;
+                let endY = getTouchY(touches[i]) - o.x;
+                for (let x = getTouchX(ongoingTouches[i]) - o.y; x <= endX; x += brushDiameter) {
+                    for (let y = getTouchY(ongoingTouches[i]) - o.x; y <= endY; y += brushDiameter) {
                         doDraw(x, y);
                     }
                 }
@@ -590,11 +590,11 @@ function init() {
     });
 
     function getTouchX(touch) {
-        return Math.floor((touch.pageY * heightScale) / cellHeight)
+        return Math.floor((touch.pageY) / cellHeight)
     }
 
     function getTouchY(touch) {
-        return Math.floor((touch.pageX * widthScale) / cellWidth)
+        return Math.floor((touch.pageX) / cellWidth)
     }
 
     function copyTouch({
@@ -619,6 +619,21 @@ function init() {
         return -1;
     }
 
+    function offset(element) {
+        let l = 0;
+        let t = 0;
+        if (element.offsetParent) {
+            do {
+                l += element.offsetLeft;
+                t += element.offsetTop;
+            } while (element == element.offsetParent);
+
+            return {
+                x: Math.floor((l - document.body.scrollLeft) / cellWidth),
+                y: Math.floor((t - document.body.scrollTop) / cellHeight)
+            };
+        }
+    }
 }
 
 function loadDropDownContent(contentHtmlElement, contentBtn, labeledContent, onClickFunc) {
