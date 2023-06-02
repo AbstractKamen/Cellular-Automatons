@@ -2,6 +2,8 @@ const AUTOMATONS = [];
 const INDEX_PROVIDERS = [];
 const colours = [];
 const ongoingTouches = [];
+const heightScale = 0.5;
+const widthScale = 0.9;
 var isDrawing;
 var brushDiameter;
 var currentBrushColour;
@@ -404,8 +406,8 @@ function init() {
     brushDiameter = 1;
     animate = null;
     canvas = document.getElementById("game");
-    canvas.height = ((window.innerHeight > 0) ? window.innerHeight : screen.height) * 0.5;
-    canvas.width = ((window.innerWidth > 0) ? window.innerWidth : screen.width) * 0.9;
+    canvas.height = ((window.innerHeight > 0) ? window.innerHeight : screen.height) * heightScale;
+    canvas.width = ((window.innerWidth > 0) ? window.innerWidth : screen.width) * widthScale;
 
     cellWidth = 4;
     cellHeight = cellWidth;
@@ -502,7 +504,7 @@ function init() {
         paletteCtx.fillRect(i++ * paletteCell, paletteCell, paletteCell, paletteCell);
     }
 
-    function clickDraw(x, y) {
+    function doDraw(x, y) {
         ctx.fillStyle = colours[currentBrushColour];
 
         const r = Math.floor(brushDiameter / 2);
@@ -513,17 +515,16 @@ function init() {
             }
         }
     }
-
+    //mouse 
     function moveDraw(event) {
         if (!isDrawing) {
             return;
         }
         let x = Math.floor(event.offsetY / cellHeight);
         let y = Math.floor(event.offsetX / cellWidth);
-        clickDraw(x, y);
+        doDraw(x, y);
     }
-    canvas.addEventListener("click", clickDraw);
-    //mouse 
+    canvas.addEventListener("click", doDraw);
     canvas.onmousemove = moveDraw;
     canvas.onmousedown = function (e) {
         isDrawing = true;
@@ -532,7 +533,6 @@ function init() {
         isDrawing = false;
     };
     // touch
-
     canvas.addEventListener("touchmove", (event) => {
         event.preventDefault();
         const touches = event.changedTouches;
@@ -541,11 +541,11 @@ function init() {
             const idx = ongoingTouchIndexById(touches[i].identifier);
 
             if (idx >= 0) {
-                let endX = Math.floor(touches[i].pageY / cellHeight);
-                let endY = Math.floor(touches[i].pageX / cellWidth);
-                for (let x = Math.floor(ongoingTouches[i].pageY / cellHeight); x <= endX; x += brushDiameter) {
-                    for (let y = Math.floor(ongoingTouches[i].pageX / cellWidth); y <= endY; y += brushDiameter) {
-                        clickDraw(x, y);
+                let endX = getTouchX(touches[i]);
+                let endY = getTouchY(touches[i]);
+                for (let x = getTouchX(ongoingTouches[i]); x <= endX; x += brushDiameter) {
+                    for (let y = getTouchY(ongoingTouches[i]); y <= endY; y += brushDiameter) {
+                        doDraw(x, y);
                     }
                 }
                 ongoingTouches.splice(idx, 1, copyTouch(touches[i]));
@@ -567,11 +567,11 @@ function init() {
         const touches = event.changedTouches;
         for (let i = 0; i < touches.length; i++) {
             ongoingTouches.push(copyTouch(touches[i]));
-            let x = Math.floor(touches[i].pageY / cellHeight);
-            let y = Math.floor(touches[i].pageX / cellWidth);
-            clickDraw(x, y);
+            let x = getTouchX(touches[i]);
+            let y = getTouchY(touches[i]);
+            doDraw(x, y);
         }
-    }, false);
+    });
 
     canvas.addEventListener("touchend", (event) => {
         event.preventDefault();
@@ -581,13 +581,21 @@ function init() {
             let idx = ongoingTouchIndexById(touches[i].identifier);
 
             if (idx >= 0) {
-                let x = Math.floor(touches[i].pageY / cellHeight);
-                let y = Math.floor(touches[i].pageX / cellWidth);
-                clickDraw(x, y);
+                let x = getTouchX(touches[i]);
+                let y = getTouchY(touches[i]);
+                doDraw(x, y);
                 ongoingTouches.splice(idx, 1);
             }
         }
-    }, false);
+    });
+
+    function getTouchX(touch) {
+        return Math.floor((touch.pageY * heightScale) / cellHeight)
+    }
+
+    function getTouchY(touch) {
+        return Math.floor((touch.pageX * widthScale) / cellWidth)
+    }
 
     function copyTouch({
         identifier,
