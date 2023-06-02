@@ -515,7 +515,7 @@ function init() {
         }
         clickDraw(event);
     }
-    canvas.onclick = clickDraw;
+    canvas.addEventListener("click", clickDraw);
     canvas.onmousemove = moveDraw;
     canvas.ontouchmove = moveDraw;
     canvas.onmousedown = function (e) {
