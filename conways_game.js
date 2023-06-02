@@ -445,24 +445,22 @@ function init() {
         currentBoard[r][2] = 2;
     }
     renderGrid(ctx, currentBoard);
-    const currentAutomatonDisplay = document.getElementById("current");
-    currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
     const automatonsContent = document.getElementById("automatons-dropdown-content");
     const automatonsBtn = document.getElementById("automatons-dropbtn");
+    automatonsBtn.textContent = currentAutomaton.label();
     loadDropDownContent(automatonsContent, automatonsBtn, AUTOMATONS, (selection) => {
         doStop();
         currentAutomaton = AUTOMATONS[selection];
-        currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
+        automatonsBtn.textContent = currentAutomaton.label();
         automatonsContent.classList.toggle("show");
     });
 
-    const currentWrappingDisplay = document.getElementById("current-wrapping");
-    currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
     const wrappingContent = document.getElementById("wrapping-dropdown-content");
     const wrappingDropdownButton = document.getElementById("wrapping-dropbtn");
+    wrappingDropdownButton.textContent = currentIndexProvider.label();
     loadDropDownContent(wrappingContent, wrappingDropdownButton, INDEX_PROVIDERS, (selection) => {
         currentIndexProvider = INDEX_PROVIDERS[selection];
-        currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
+        wrappingDropdownButton.textContent = currentIndexProvider.label();
         wrappingContent.classList.toggle("show");
     });
     document.getElementById("brush").value = brushDiameter;
