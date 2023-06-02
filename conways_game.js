@@ -469,7 +469,6 @@ function init() {
     }
     document.getElementById("play").addEventListener("click", playStop);
     document.getElementById("clear").addEventListener("click", () => {
-        doStop();
         currentBoard.forEach(row => {
             row.fill(0);
         });
