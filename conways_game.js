@@ -1,6 +1,9 @@
-const AUTOMATONS = []
-const INDEX_PROVIDERS = []
+const AUTOMATONS = [];
+const INDEX_PROVIDERS = [];
 const colours = [];
+const ongoingTouches = [];
+const heightScale = 0.5;
+const widthScale = 0.9;
 var isDrawing;
 var brushDiameter;
 var currentBrushColour;
@@ -15,6 +18,7 @@ var nextBoard;
 var currentAutomaton;
 var currentIndexProvider;
 var animate;
+
 onload = () => {
     init();
 }
@@ -402,8 +406,8 @@ function init() {
     brushDiameter = 1;
     animate = null;
     canvas = document.getElementById("game");
-    canvas.height = 800;
-    canvas.width = 600;
+    canvas.height = ((window.innerHeight > 0) ? window.innerHeight : screen.height) * heightScale;
+    canvas.width = ((window.innerWidth > 0) ? window.innerWidth : screen.width) * widthScale;
 
     cellWidth = 4;
     cellHeight = cellWidth;
@@ -433,27 +437,30 @@ function init() {
     AUTOMATONS.push(sirpinskisTriangleAutomaton());
     AUTOMATONS.push(getBrainOfBrianAutomaton());
     AUTOMATONS.push(seedDashAutomaton());
-    currentAutomaton = AUTOMATONS[1];
-    currentBoard[0][0] = 1;
+    currentAutomaton = AUTOMATONS[5];
+    h = currentBoard.length / 2;
+    for (r = 0; r < h; ++r) {
+        currentBoard[r][0] = 2;
+        currentBoard[r][1] = 2;
+        currentBoard[r][2] = 2;
+    }
     renderGrid(ctx, currentBoard);
-    const currentAutomatonDisplay = document.getElementById("current");
-    currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
     const automatonsContent = document.getElementById("automatons-dropdown-content");
     const automatonsBtn = document.getElementById("automatons-dropbtn");
+    automatonsBtn.textContent = currentAutomaton.label();
     loadDropDownContent(automatonsContent, automatonsBtn, AUTOMATONS, (selection) => {
         doStop();
         currentAutomaton = AUTOMATONS[selection];
-        currentAutomatonDisplay.textContent = "Current Automaton: " + currentAutomaton.label();
+        automatonsBtn.textContent = currentAutomaton.label();
         automatonsContent.classList.toggle("show");
     });
 
-    const currentWrappingDisplay = document.getElementById("current-wrapping");
-    currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
     const wrappingContent = document.getElementById("wrapping-dropdown-content");
     const wrappingDropdownButton = document.getElementById("wrapping-dropbtn");
+    wrappingDropdownButton.textContent = currentIndexProvider.label();
     loadDropDownContent(wrappingContent, wrappingDropdownButton, INDEX_PROVIDERS, (selection) => {
         currentIndexProvider = INDEX_PROVIDERS[selection];
-        currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
+        wrappingDropdownButton.textContent = currentIndexProvider.label();
         wrappingContent.classList.toggle("show");
     });
     document.getElementById("brush").value = brushDiameter;
@@ -462,7 +469,6 @@ function init() {
     }
     document.getElementById("play").addEventListener("click", playStop);
     document.getElementById("clear").addEventListener("click", () => {
-        doStop();
         currentBoard.forEach(row => {
             row.fill(0);
         });
@@ -495,41 +501,136 @@ function init() {
         paletteCtx.fillRect(i++ * paletteCell, paletteCell, paletteCell, paletteCell);
     }
 
-    function clickDraw(event) {
-        let mx = Math.floor(event.offsetY / cellHeight);
-        let my = Math.floor(event.offsetX / cellWidth);
+    function doDraw(x, y) {
         ctx.fillStyle = colours[currentBrushColour];
 
         const r = Math.floor(brushDiameter / 2);
-        for (let dx = Math.max(0, mx - r); Math.min(rows - 1, dx <= mx + r); ++dx) {
-            for (let dy = Math.max(0, my - r); dy <= Math.min(cols - 1, my + r); ++dy) {
+        for (let dx = Math.max(0, x - r); dx <= Math.min(rows - 1, x + r); ++dx) {
+            for (let dy = Math.max(0, y - r); dy <= Math.min(cols - 1, y + r); ++dy) {
                 currentBoard[dx][dy] = currentBrushColour;
                 ctx.fillRect(dy * cellWidth, dx * cellHeight, cellWidth, cellHeight);
             }
         }
     }
-
+    //mouse 
     function moveDraw(event) {
         if (!isDrawing) {
             return;
         }
-        clickDraw(event);
+        let x = Math.floor(event.offsetY / cellHeight);
+        let y = Math.floor(event.offsetX / cellWidth);
+        doDraw(x, y);
     }
-    canvas.addEventListener("click", clickDraw);
+    canvas.addEventListener("click", doDraw);
     canvas.onmousemove = moveDraw;
-    canvas.ontouchmove = moveDraw;
     canvas.onmousedown = function (e) {
         isDrawing = true;
     };
     canvas.onmouseup = function (e) {
         isDrawing = false;
     };
-    canvas.ontouchstart = function (e) {
-        isDrawing = true;
-    };
-    canvas.ontouchend = function (e) {
-        isDrawing = false;
-    };
+    // touch
+    canvas.addEventListener("touchmove", (event) => {
+        event.preventDefault();
+        const touches = event.changedTouches;
+        const o = offset(canvas);
+        for (let i = 0; i < touches.length; ++i) {
+            const idx = ongoingTouchIndexById(touches[i].identifier);
+
+            if (idx >= 0) {
+                let endX = getTouchX(touches[i]) - o.y;
+                let endY = getTouchY(touches[i]) - o.x;
+                for (let x = getTouchX(ongoingTouches[i]) - o.y; x <= endX; x += brushDiameter) {
+                    for (let y = getTouchY(ongoingTouches[i]) - o.x; y <= endY; y += brushDiameter) {
+                        doDraw(x, y);
+                    }
+                }
+                ongoingTouches.splice(idx, 1, copyTouch(touches[i]));
+            }
+        }
+    });
+
+    canvas.addEventListener("touchcancel", (event) => {
+        event.preventDefault();
+        const touches = event.changedTouches;
+        for (let i = 0; i < touches.length; ++i) {
+            let idx = ongoingTouchIndexById(touches[i].identifier);
+            ongoingTouches.splice(idx, 1);
+        }
+    });
+
+    canvas.addEventListener("touchstart", (event) => {
+        event.preventDefault();
+        const touches = event.changedTouches;
+        for (let i = 0; i < touches.length; i++) {
+            ongoingTouches.push(copyTouch(touches[i]));
+            let x = getTouchX(touches[i]);
+            let y = getTouchY(touches[i]);
+            doDraw(x, y);
+        }
+    });
+
+    canvas.addEventListener("touchend", (event) => {
+        event.preventDefault();
+        const touches = event.changedTouches;
+
+        for (let i = 0; i < touches.length; i++) {
+            let idx = ongoingTouchIndexById(touches[i].identifier);
+
+            if (idx >= 0) {
+                let x = getTouchX(touches[i]);
+                let y = getTouchY(touches[i]);
+                doDraw(x, y);
+                ongoingTouches.splice(idx, 1);
+            }
+        }
+    });
+
+    function getTouchX(touch) {
+        return Math.floor((touch.pageY) / cellHeight)
+    }
+
+    function getTouchY(touch) {
+        return Math.floor((touch.pageX) / cellWidth)
+    }
+
+    function copyTouch({
+        identifier,
+        pageX,
+        pageY
+    }) {
+        return {
+            identifier,
+            pageX,
+            pageY
+        };
+    }
+
+    function ongoingTouchIndexById(idToFind) {
+        for (let i = 0; i < ongoingTouches.length; i++) {
+            const id = ongoingTouches[i].identifier;
+            if (id === idToFind) {
+                return i;
+            }
+        }
+        return -1;
+    }
+
+    function offset(element) {
+        let l = 0;
+        let t = 0;
+        if (element.offsetParent) {
+            do {
+                l += element.offsetLeft;
+                t += element.offsetTop;
+            } while (element == element.offsetParent);
+
+            return {
+                x: Math.floor((l - document.body.scrollLeft) / cellWidth),
+                y: Math.floor((t - document.body.scrollTop) / cellHeight)
+            };
+        }
+    }
 }
 
 function loadDropDownContent(contentHtmlElement, contentBtn, labeledContent, onClickFunc) {
