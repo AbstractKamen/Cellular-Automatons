@@ -541,37 +541,38 @@ function init() {
             const idx = ongoingTouchIndexById(touches[i].identifier);
 
             if (idx >= 0) {
-                let endX = touches[i].pageX;
-                let endY = touches[i].pagey;
-                for (let x = ongoingTouches[idx].pageX; x <= endX; ++x) {
-                    for (let y = ongoingTouches[idx].pageY; y <= endY; ++x) {
-                        clickDraw(Math.floor(x / cellHeight), Math.floor(y / cellWidth));
+                let endX = Math.floor(touches[i].pageY / cellHeight);
+                let endY = Math.floor(touches[i].pageX / cellWidth);
+                for (let x = Math.floor(ongoingTouches[i].pageY / cellHeight); x <= endX; x += brushDiameter) {
+                    for (let y = Math.floor(ongoingTouches[i].pageX / cellWidth); y <= endY; y += brushDiameter) {
+                        clickDraw(x, y);
                     }
                 }
-
                 ongoingTouches.splice(idx, 1, copyTouch(touches[i]));
             }
         }
     });
+
     canvas.addEventListener("touchcancel", (event) => {
         event.preventDefault();
         const touches = event.changedTouches;
-
         for (let i = 0; i < touches.length; ++i) {
             let idx = ongoingTouchIndexById(touches[i].identifier);
             ongoingTouches.splice(idx, 1);
         }
     });
+
     canvas.addEventListener("touchstart", (event) => {
         event.preventDefault();
         const touches = event.changedTouches;
         for (let i = 0; i < touches.length; i++) {
             ongoingTouches.push(copyTouch(touches[i]));
-            let x = Math.floor(touches[i].pageX / cellHeight);
-            let y = Math.floor(touches[i].pageY / cellWidth);
+            let x = Math.floor(touches[i].pageY / cellHeight);
+            let y = Math.floor(touches[i].pageX / cellWidth);
             clickDraw(x, y);
         }
     }, false);
+
     canvas.addEventListener("touchend", (event) => {
         event.preventDefault();
         const touches = event.changedTouches;
@@ -580,8 +581,8 @@ function init() {
             let idx = ongoingTouchIndexById(touches[i].identifier);
 
             if (idx >= 0) {
-                let x = Math.floor(touches[i].pageX / cellHeight);
-                let y = Math.floor(touches[i].pageY / cellWidth);
+                let x = Math.floor(touches[i].pageY / cellHeight);
+                let y = Math.floor(touches[i].pageX / cellWidth);
                 clickDraw(x, y);
                 ongoingTouches.splice(idx, 1);
             }
