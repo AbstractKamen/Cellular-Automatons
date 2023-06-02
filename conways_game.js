@@ -1,6 +1,9 @@
 const AUTOMATONS = []
 const INDEX_PROVIDERS = []
 const colours = [];
+var isDrawing;
+var brushDiameter;
+var currentBrushColour;
 var canvas;
 var ctx;
 var cellWidth;
@@ -395,6 +398,8 @@ function getNonWrappingIndexProvider() {
 // END INDEX_PROVIDERS
 
 function init() {
+    currentBrushColour = 1;
+    brushDiameter = 1;
     animate = null;
     canvas = document.getElementById("game");
     canvas.height = 800;
@@ -451,20 +456,10 @@ function init() {
         currentWrappingDisplay.textContent = " " + currentIndexProvider.label();
         wrappingContent.classList.toggle("show");
     });
-
-    canvas.addEventListener("click", (event) => {
-        let row = Math.floor(event.offsetY / cellHeight);
-        let col = Math.floor(event.offsetX / cellWidth);
-        if (animate == null) {
-            currentBoard[row][col] = 1;
-            renderGrid(ctx, currentBoard);
-        } else {
-            doStop();
-            currentBoard[row][col] = 1;
-            doPlay();
-        }
-
-    })
+    document.getElementById("brush").value = brushDiameter;
+    document.getElementById("brush").oninput = () => {
+        brushDiameter = parseInt(document.getElementById("brush").value);
+    }
     document.getElementById("play").addEventListener("click", playStop);
     document.getElementById("clear").addEventListener("click", () => {
         doStop();
@@ -473,6 +468,57 @@ function init() {
         });
         renderGrid(ctx, currentBoard);
     })
+
+    // user drawing
+    const paletteCell = 32;
+    currentColourCanvas = document.getElementById("current-colour");
+    currentColourCtx = currentColourCanvas.getContext("2d");
+    currentColourCanvas.width = paletteCell;
+    currentColourCanvas.height = paletteCell;
+    currentColourCtx.fillStyle = colours[currentBrushColour];
+    currentColourCtx.fillRect(0, 0, paletteCell, paletteCell);
+
+    paletteCanvas = document.getElementById("palette");
+    paletteCanvas.addEventListener("click", (e) => {
+        let x = e.offsetX;
+        currentBrushColour = Math.floor(x / paletteCell) % colours.length;
+        currentColourCtx.fillStyle = colours[currentBrushColour];
+        currentColourCtx.fillRect(0, 0, paletteCell, paletteCell);
+    })
+    paletteCanvas.width = paletteCell * colours.length;
+    paletteCanvas.height = paletteCell * 2;
+    paletteCtx = paletteCanvas.getContext("2d");
+    let i = 0;
+
+    for (c of colours) {
+        paletteCtx.fillStyle = c;
+        paletteCtx.fillRect(i++ * paletteCell, paletteCell, paletteCell, paletteCell);
+    }
+
+    canvas.onmousemove = function (e) {
+        if (!isDrawing) {
+            return;
+        }
+        let mx = Math.floor(e.offsetY / cellHeight);
+        let my = Math.floor(e.offsetX / cellWidth);
+        ctx.fillStyle = colours[currentBrushColour];
+
+        const r = Math.floor(brushDiameter / 2);
+        for (let dx = Math.max(0, mx - r); Math.min(rows - 1, dx <= mx + r); ++dx) {
+            for (let dy = Math.max(0, my - r); dy <= Math.min(cols - 1, my + r); ++dy) {
+                currentBoard[dx][dy] = currentBrushColour;
+                ctx.fillRect(dy * cellWidth, dx * cellHeight, cellWidth, cellHeight);
+            }
+        }
+
+
+    };
+    canvas.onmousedown = function (e) {
+        isDrawing = true;
+    };
+    canvas.onmouseup = function (e) {
+        isDrawing = false;
+    };
 }
 
 function loadDropDownContent(contentHtmlElement, contentBtn, labeledContent, onClickFunc) {
