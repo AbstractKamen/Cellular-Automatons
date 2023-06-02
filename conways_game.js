@@ -517,19 +517,19 @@ function init() {
     }
     canvas.addEventListener("click", clickDraw);
     canvas.onmousemove = moveDraw;
-    canvas.ontouchmove = moveDraw;
+    canvas.addEventListener("touchmove", moveDraw, false);
     canvas.onmousedown = function (e) {
         isDrawing = true;
     };
     canvas.onmouseup = function (e) {
         isDrawing = false;
     };
-    canvas.ontouchstart = function (e) {
+    canvas.addEventListener("touchstart", () => {
         isDrawing = true;
-    };
-    canvas.ontouchend = function (e) {
+    }, false);
+    canvas.addEventListener("touchend", () => {
         isDrawing = false;
-    };
+    }, false);
 }
 
 function loadDropDownContent(contentHtmlElement, contentBtn, labeledContent, onClickFunc) {
