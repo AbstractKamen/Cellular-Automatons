@@ -402,8 +402,8 @@ function init() {
     brushDiameter = 1;
     animate = null;
     canvas = document.getElementById("game");
-    canvas.height = ((window.innerHeight > 0) ? window.innerHeight : screen.height)*0.6;
-    canvas.width = ((window.innerWidth > 0) ? window.innerWidth : screen.width);
+    canvas.height = ((window.innerHeight > 0) ? window.innerHeight : screen.height) * 0.5;
+    canvas.width = ((window.innerWidth > 0) ? window.innerWidth : screen.width) * 0.9;
 
     cellWidth = 4;
     cellHeight = cellWidth;
