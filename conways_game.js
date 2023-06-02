@@ -495,12 +495,12 @@ function init() {
         paletteCtx.fillRect(i++ * paletteCell, paletteCell, paletteCell, paletteCell);
     }
 
-    canvas.onmousemove = function (e) {
+    function moveDraw(event) {
         if (!isDrawing) {
             return;
         }
-        let mx = Math.floor(e.offsetY / cellHeight);
-        let my = Math.floor(e.offsetX / cellWidth);
+        let mx = Math.floor(event.offsetY / cellHeight);
+        let my = Math.floor(event.offsetX / cellWidth);
         ctx.fillStyle = colours[currentBrushColour];
 
         const r = Math.floor(brushDiameter / 2);
@@ -510,13 +510,19 @@ function init() {
                 ctx.fillRect(dy * cellWidth, dx * cellHeight, cellWidth, cellHeight);
             }
         }
-
-
-    };
+    }
+    canvas.onmousemove = moveDraw;
+    canvas.ontouchmove = moveDraw;
     canvas.onmousedown = function (e) {
         isDrawing = true;
     };
     canvas.onmouseup = function (e) {
+        isDrawing = false;
+    };
+    canvas.ontouchstart = function (e) {
+        isDrawing = true;
+    };
+    canvas.ontouchend = function (e) {
         isDrawing = false;
     };
 }
